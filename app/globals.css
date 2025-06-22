@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
@@ -24,3 +28,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+
+/* ─── custom utility ─── */
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;        /* Edge */
+    scrollbar-width: none;           /* Firefox */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;                   /* Chrome / Safari */
+  }
+}
+
