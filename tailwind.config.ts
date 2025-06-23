@@ -8,6 +8,9 @@ export default {
         borderRadius: { card: "0.75rem", hero: "1.75rem" },
       },
     },
-    plugins: [require("tailwindcss-animate")],
+    plugins: [require("tailwindcss-animate"),
+
+    ],
+    
   };
   
