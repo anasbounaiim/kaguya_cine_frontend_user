@@ -1,223 +1,840 @@
-/* components/ui/ChatWidget.tsx */
 "use client";
 
+// ─── IMPORTS ──────────────────────────────────────────────────────────────
 import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  MessageCircle,
+  Send,
+  Star,
+  Calendar,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Plus,
+  X,
+  Film,
+  TrendingUp,
+  Sparkles,
+  ThumbsUp,
+  Popcorn,
+} from "lucide-react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
-/* ───── types ───── */
-type Msg = { role: "user" | "assistant"; content: string };
+// ─── COLOR PALETTE & CONSTANTS ────────────────────────────────────────────
+const NETFLIX_RED = "#E50914";
+const NETFLIX_RED_LIGHT = "#FF2121";
+const DEEP_BLACK = "#000000";
+const DARK_GRAY = "#141414";
+const MEDIUM_GRAY = "#232323";
+const LIGHT_GRAY = "#B3B3B3";
+const WHITE = "#FFFFFF";
+const NEON_GLOW = `0 0 8px ${NETFLIX_RED_LIGHT}80, 0 0 16px ${NETFLIX_RED_LIGHT}40`;
 
-/* ───── component ───── */
+// ─── TYPE DEFINITIONS ─────────────────────────────────────────────────────
+type Msg = { role: "user" | "assistant"; content: React.ReactNode; id: string };
+type Movie = {
+  id: number;
+  title: string;
+  poster_path: string;
+  tmdb_url: string;
+  overview: string;
+  director: string;
+  main_cast: string[];
+  runtime: number;
+  release_date: string;
+  genres: string[];
+  vote_average: number;
+  vote_count: number;
+};
+
+type ApiResponse = {
+  movies: Movie[];
+  assistant_message: string;
+  mood: string;
+  total_movies: number;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// ─── MOVIE CARD COMPONENT ────────────────────────────────────────────────
+function MovieCard({
+  movie,
+  showReason = true,
+  active,
+  side,
+  hidden,
+  onClick,
+}: {
+  movie: Movie;
+  showReason?: boolean;
+  active?: boolean;
+  side?: boolean;
+  hidden?: boolean;
+  onClick?: () => void;
+}) {
+  const reasons = [
+    "Perfect for your mood",
+    "Trending globally",
+    "Curated for you",
+    "Critics' favorite",
+    "Audience choice",
+    "Similar to your favorites",
+  ];
+  const match = Math.floor(Math.random() * 15) + 85;
+  const reason = reasons[Math.floor(Math.random() * reasons.length)];
+
+  let cardClass = "";
+  if (active) cardClass = "scale-100 opacity-100 z-20 filter-none";
+  else if (side) cardClass = "scale-90 opacity-70 z-10 grayscale";
+  else if (hidden) cardClass = "scale-75 opacity-0 pointer-events-none z-0 grayscale";
+
+  return (
+    <motion.div
+      className={cn(
+        "w-[230px] h-[290px] transition-all duration-500 ease-out relative cursor-pointer group",
+        cardClass
+      )}
+      style={{
+        filter: active ? "none" : "grayscale(100%)",
+        boxShadow: active ? `0 0 24px ${NETFLIX_RED}30, 0 8px 30px rgba(0,0,0,.5)` : "none",
+      }}
+      whileHover={active ? { scale: 1.025 } : {}}
+      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      onClick={onClick}
+    >
+      {/* Recommendation badge */}
+      {showReason && active && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute -top-3 left-3 right-3 z-30"
+        >
+          <div
+            className="flex items-center justify-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold text-white shadow-lg border border-white/20"
+            style={{
+              background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+            }}
+          >
+            <TrendingUp className="w-3 h-3" />
+            {reason}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Main card */}
+      <div
+        className="relative h-full rounded-xl overflow-hidden group"
+        style={{ backgroundColor: DARK_GRAY }}
+      >
+        {/* Movie poster */}
+        <div className="absolute inset-0">
+          <Image
+            src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
+            alt={movie.title + " poster"}
+            fill
+            priority={active}
+            sizes="230px"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+        </div>
+
+        {/* Movie info and actions */}
+        <div className="relative z-10 h-full flex flex-col justify-between p-3">
+          <div className="flex items-start justify-between">
+            <div
+              className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-lg border border-white/20"
+              style={{
+                background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+              }}
+            >
+              <div className="w-1.5 h-1.5 bg-white rounded-full" />
+              {match}% Match
+            </div>
+            <div
+              className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white border border-white/20"
+              style={{ backgroundColor: MEDIUM_GRAY }}
+            >
+              4K
+            </div>
+          </div>
+          <div className="space-y-1 mt-1">
+            <h3 className="text-base font-bold text-white leading-tight tracking-tight">
+              {movie.title}
+            </h3>
+            <div className="flex items-center gap-2 text-xs" style={{ color: LIGHT_GRAY }}>
+              <span className="flex items-center gap-0.5">
+                <Calendar className="w-3 h-3" />
+                {new Date(movie.release_date).getFullYear()}
+              </span>
+              <span className="flex items-center gap-0.5">
+                <Clock className="w-3 h-3" />
+                {movie.runtime}m
+              </span>
+              <span className="flex items-center gap-0.5 text-yellow-400">
+                <Star className="w-3 h-3 fill-current" />
+                {movie.vote_average.toFixed(1)}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {movie.genres.slice(0, 2).map((g) => (
+                <span
+                  key={g}
+                  className="px-2 py-0.5 rounded-full text-[10px] font-medium border"
+                  style={{
+                    backgroundColor: "transparent",
+                    borderColor: NETFLIX_RED_LIGHT,
+                    color: NETFLIX_RED_LIGHT,
+                  }}
+                >
+                  {g}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs line-clamp-2" style={{ color: LIGHT_GRAY }}>
+              {movie.overview}
+            </p>
+            {active && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12 }}
+                className="flex gap-2 pt-1"
+              >
+                <a
+                  href={movie.tmdb_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1 rounded-md px-3 py-1.5 text-xs font-bold text-white transition hover:opacity-90"
+                  style={{
+                    background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  Watch
+                </a>
+                <button
+                  className="flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs font-bold transition hover:opacity-80 border"
+                  style={{
+                    backgroundColor: "transparent",
+                    borderColor: NETFLIX_RED_LIGHT,
+                    color: NETFLIX_RED_LIGHT,
+                  }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Plus className="w-3 h-3" />
+                  List
+                </button>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// ─── MOVIE DETAIL MODAL ──────────────────────────────────────────────────
+function MovieDetailModal({ movie, onClose }: { movie: Movie; onClose: () => void }) {
+  return (
+    <div className="relative flex flex-col gap-0 md:gap-6 w-full p-4 md:p-8">
+      <button 
+        onClick={onClose} 
+        className="absolute top-3 right-3 z-50 text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition-all hover:scale-110"
+      >
+        <X className="w-5 h-5" />
+      </button>
+      {/* Poster */}
+      <div className="flex-shrink-0 w-full md:w-1/3 h-64 md:h-96 relative rounded-xl overflow-hidden shadow-lg border border-gray-800">
+        <Image
+          src={`https://image.tmdb.org/t/p/original${movie.poster_path}`}
+          alt={movie.title + " poster"}
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+      </div>
+      {/* Movie info */}
+      <div className="flex-1 flex flex-col justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-1">{movie.title}</h1>
+          <div className="flex items-center gap-3 text-base mb-3">
+            <span className="flex items-center gap-1 text-gray-400">
+              <Calendar className="w-4 h-4" /> {new Date(movie.release_date).getFullYear()}
+            </span>
+            <span className="flex items-center gap-1 text-gray-400">
+              <Clock className="w-4 h-4" /> {movie.runtime}m
+            </span>
+            <span className="flex items-center gap-1 text-yellow-400 font-semibold">
+              <Star className="w-4 h-4 fill-current" /> {movie.vote_average.toFixed(1)}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {movie.genres.map((g) => (
+              <span
+                key={g}
+                className="px-3 py-1 rounded-full text-xs font-medium border"
+                style={{
+                  borderColor: NETFLIX_RED_LIGHT,
+                  color: NETFLIX_RED_LIGHT,
+                }}
+              >
+                {g}
+              </span>
+            ))}
+          </div>
+          <p className="text-gray-200 text-base mb-4">{movie.overview}</p>
+          <div className="text-sm mb-2">
+            <span className="font-semibold">Director:</span>{" "}
+            <span className="text-gray-300">{movie.director}</span>
+          </div>
+          <div className="text-sm mb-2">
+            <span className="font-semibold">Main Cast:</span>{" "}
+            <span className="text-gray-300">{movie.main_cast.join(", ")}</span>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-4">
+          <a
+            href={movie.tmdb_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 rounded-lg px-4 py-2 text-white font-bold text-base transition-all hover:scale-105"
+            style={{
+              background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+              boxShadow: NEON_GLOW,
+            }}
+          >
+            <Play className="w-4 h-4" /> See on TMDB
+          </a>
+          <button
+            className="flex items-center gap-2 rounded-lg px-4 py-2 border font-bold text-base transition-all hover:scale-105"
+            style={{
+              borderColor: NETFLIX_RED_LIGHT,
+              color: NETFLIX_RED_LIGHT,
+            }}
+          >
+            <Plus className="w-4 h-4" /> Add to list
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// ─── MOVIE CAROUSEL (DECK) ───────────────────────────────────────────────
+function DeckCarousel({ movies }: { movies: Movie[] }) {
+  const [index, setIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [modalMovie, setModalMovie] = useState<Movie | null>(null);
+
+  // Helper: Determine the position/style of each card
+  const getCardProps = (i: number) => {
+    const offset = i - index;
+    if (offset === 0) return { active: true };
+    if (Math.abs(offset) === 1) return { side: true };
+    return { hidden: true };
+  };
+
+  // Helper: Transform/animation for card
+  const getTransform = (i: number) => {
+    const offset = i - index;
+    if (offset === 0) return "translateX(0) scale(1)";
+    if (offset === -1) return "translateX(-90%) scale(0.92)";
+    if (offset === 1) return "translateX(90%) scale(0.92)";
+    if (offset < -1) return "translateX(-110%) scale(0.78)";
+    if (offset > 1) return "translateX(110%) scale(0.78)";
+    return "translateX(0) scale(0.)";
+  };
+
+  // Carousel navigation
+  const navigate = (direction: "prev" | "next") => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+
+    if (direction === "prev") setIndex((i) => (i - 1 + movies.length) % movies.length);
+    else setIndex((i) => (i + 1) % movies.length);
+
+    setTimeout(() => setIsTransitioning(false), 350);
+  };
+
+  return (
+    <div className="relative w-full max-w-2xl mx-auto h-[310px] flex items-center justify-center">
+      <div className="relative w-full h-full flex items-center justify-center" style={{ perspective: "1000px" }}>
+        {movies.map((movie, i) => {
+          const props = getCardProps(i);
+          return (
+            <div
+              key={movie.id}
+              className="absolute transition-all duration-500"
+              style={{
+                transform: getTransform(i),
+                transformStyle: "preserve-3d",
+                width: "230px",
+                height: "290px",
+              }}
+            >
+              <MovieCard movie={movie} {...props} onClick={() => setModalMovie(movie)} />
+            </div>
+          );
+        })}
+      </div>
+      {/* Carousel navigation arrows */}
+      {movies.length > 1 && (
+        <>
+          <button
+            onClick={() => navigate("prev")}
+            disabled={isTransitioning}
+            aria-label="Previous movie"
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full flex items-center justify-center text-white transition disabled:opacity-50 hover:scale-110 backdrop-blur-sm"
+            style={{
+              background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+              boxShadow: NEON_GLOW,
+            }}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => navigate("next")}
+            disabled={isTransitioning}
+            aria-label="Next movie"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full flex items-center justify-center text-white transition disabled:opacity-50 hover:scale-110 backdrop-blur-sm"
+            style={{
+              background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+              boxShadow: NEON_GLOW,
+            }}
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </>
+      )}
+      {/* Dots */}
+      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex gap-1 z-30">
+        {movies.map((_, i) => (
+          <button
+            key={i}
+            className={cn(
+              "w-2.5 h-2.5 rounded-full transition-all duration-200",
+              i === index ? "scale-110" : "hover:scale-105"
+            )}
+            style={{
+              backgroundColor: i === index ? NETFLIX_RED_LIGHT : LIGHT_GRAY + "60",
+              boxShadow: i === index ? NEON_GLOW : "none",
+            }}
+            onClick={() => !isTransitioning && setIndex(i)}
+            aria-label={`Go to movie ${i + 1}`}
+          />
+        ))}
+      </div>
+      {/* Movie Details Modal */}
+      <Dialog open={!!modalMovie} onOpenChange={(open) => !open && setModalMovie(null)}>
+        <DialogContent className="max-w-2xl bg-[#1A1A1A] text-white rounded-2xl p-0 overflow-hidden border border-gray-800">
+          {modalMovie && <MovieDetailModal movie={modalMovie} onClose={() => setModalMovie(null)} />}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// ─── ASSISTANT MESSAGE (RESPONSE + CAROUSEL) ─────────────────────────────
+function AssistantMessage({ data }: { data: ApiResponse }) {
+  const movies = data.movies?.slice(0, 6) || [];
+  if (!movies.length) return <p className="text-white">{data.assistant_message}</p>;
+  return (
+    <div className="space-y-5">
+      <div className="prose prose-invert max-w-none text-white prose-headings:text-white prose-p:text-gray-300 prose-p:leading-tight">
+        <div dangerouslySetInnerHTML={{ __html: data.assistant_message }} />
+      </div>
+      <DeckCarousel movies={movies} />
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// ─── MAIN CHAT WIDGET ────────────────────────────────────────────────────
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
 
-  /* auto-scroll on new message */
   useEffect(() => {
     scroller.current?.scrollTo({ top: 9e9, behavior: "smooth" });
   }, [msgs]);
 
-  const send = () => {
+  // Send user message and fetch assistant response
+  const send = async () => {
     if (!draft.trim()) return;
-    const q = draft.trim();
+    const text = draft.trim();
+    const newMsg: Msg = { role: "user", content: text, id: Date.now().toString() };
     setDraft("");
-    setMsgs((m) => [...m, { role: "user", content: q }]);
+    setMsgs((m) => [...m, newMsg]);
+    setIsTyping(true);
 
-    // demo reply — replace with API call
-    setTimeout(() => {
+    try {
+      const res = await fetch("http://localhost:8088/api/movies/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: ApiResponse = await res.json();
+      setIsTyping(false);
       setMsgs((m) => [
         ...m,
-        { role: "assistant", content: "💡 Je réfléchis à une reco…" },
+        { role: "assistant", content: <AssistantMessage data={data} />, id: Date.now().toString() },
       ]);
-    }, 700);
+    } catch (err) {
+      setIsTyping(false);
+      setMsgs((m) => [
+        ...m,
+        {
+          role: "assistant",
+          content: (
+            <div
+              className="flex items-center gap-2 rounded-lg p-3 border"
+              style={{
+                backgroundColor: `${NETFLIX_RED}20`,
+                borderColor: `${NETFLIX_RED}60`,
+                color: NETFLIX_RED,
+                fontSize: "13px",
+              }}
+            >
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: NETFLIX_RED }} />
+              <span>Unable to connect. Please try again.</span>
+            </div>
+          ),
+          id: Date.now().toString(),
+        },
+      ]);
+    }
   };
 
   const welcome = msgs.length === 0;
 
   return (
     <>
-      {/* ─── floating action button ─── */}
-      <Button
-        size="icon"
+      {/* Floating Button Launcher */}
+      <motion.button
         onClick={() => setOpen(true)}
-        className="fixed bottom-7 right-7 z-50 h-16 w-16 rounded-full
-                   bg-[#E50914] text-white shadow-2xl transition-all duration-300
-                   hover:bg-[#bf0811] hover:scale-110 hover:shadow-[0_0_30px_rgba(229,9,20,0.6)]"
+        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-xl flex items-center justify-center text-white shadow-lg group"
+        style={{
+          background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+          boxShadow: `0 6px 24px ${NETFLIX_RED}80`,
+        }}
+        whileHover={{ scale: 1.07 }}
+        whileTap={{ scale: 0.95 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
       >
-        <MessageCircle className="h-8 w-8" />
-        <span className="sr-only">Chatbot recommandations</span>
-      </Button>
+        <Film className="w-6 h-6 group-hover:scale-110 transition-transform" />
+        <span className="sr-only">Open Movie Companion</span>
+        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center">
+          <Sparkles className="w-2.5 h-2.5 text-red-500" />
+        </div>
+      </motion.button>
 
-      {/* ─── modal ─── */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          className="flex h-[90vh] w-[95vw] max-w-5xl flex-col rounded-3xl
-                     bg-[#141414]/95 backdrop-blur-xl border border-white/20
-                     p-0 shadow-2xl
-                     sm:h-[92vh] sm:w-[90vw] 
-                     md:w-[85vw] md:max-w-4xl
-                     lg:w-[80vw] lg:max-w-5xl
-                     xl:w-[75vw] xl:max-w-6xl"
-        >
-          <DialogHeader className="py-6 border-b border-white/10">
-            <DialogTitle className="mx-auto text-2xl font-bold tracking-wide bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-              🎬 Recos&nbsp;cinéma&nbsp;✨
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* ─── message list ─── */}
-          <div
-            ref={scroller}
-            className="flex-1 overflow-y-auto space-y-6 px-6 py-8
-                       scrollbar-thin scrollbar-track-transparent
-                       scrollbar-thumb-[#E50914]/40 hover:scrollbar-thumb-[#E50914]/60
-                       sm:px-8 sm:space-y-8
-                       md:px-12"
+      {/* Modal Chat Widget */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+            style={{ backgroundColor: "rgba(0,0,0,0.82)" }}
           >
-            {welcome ? (
-              <Welcome setDraft={setDraft} />
-            ) : (
-              msgs.map((m, i) => <Bubble key={i} msg={m} />)
-            )}
-          </div>
-
-          {/* ─── composer ─── */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
-            className="flex items-center gap-4 border-t border-white/15
-                       bg-[#141414]/90 backdrop-blur-sm p-6
-                       sm:px-8 md:px-12"
-          >
-            <div className="relative flex-1">
-              <Input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Demande-moi un film pour ce soir…"
-                className="h-14 pr-4 pl-6 border border-white/20 bg-white/5 text-base
-                           rounded-2xl backdrop-blur-sm
-                           focus-visible:ring-2 focus-visible:ring-[#E50914]/50
-                           focus-visible:border-[#E50914]/50
-                           placeholder:text-white/50"
-              />
-            </div>
-            <Button
-              type="submit"
-              size="icon"
-              disabled={!draft.trim()}
-              className="h-14 w-14 rounded-2xl bg-gradient-to-r from-[#E50914] to-[#bf0811]
-                         disabled:opacity-40 disabled:cursor-not-allowed
-                         hover:from-[#bf0811] hover:to-[#9a0610]
-                         transition-all duration-200 hover:scale-105
-                         shadow-lg hover:shadow-[0_0_20px_rgba(229,9,20,0.4)]"
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="w-[90vw] h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border border-gray-800"
+              style={{
+                background: `linear-gradient(135deg, ${DARK_GRAY} 0%, ${DEEP_BLACK} 100%)`,
+              }}
             >
-              <Send className="h-6 w-6" />
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+              {/* Header */}
+              <div
+                className="flex items-center justify-between p-5 border-b"
+                style={{ borderColor: MEDIUM_GRAY }}
+              >
+                <div className="flex items-center gap-3">
+                  <motion.div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white text-sm shadow-lg"
+                    style={{
+                      background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+                    }}
+                    animate={{
+                      rotate: [0, 5, -5, 0],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                    }}
+                  >
+                    <Popcorn className="w-5 h-5" />
+                  </motion.div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white tracking-tight">Movie Companion</h2>
+                    <p className="text-xs" style={{ color: LIGHT_GRAY }}>AI-powered recommendations</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-[#232323]/80 transition hover:scale-110"
+                  style={{ backgroundColor: MEDIUM_GRAY }}
+                  aria-label="Close dialog"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Messages Area */}
+              <div
+                ref={scroller}
+                className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent"
+              >
+                {welcome ? (
+                  <Welcome setDraft={setDraft} />
+                ) : (
+                  <>
+                    {msgs.map((m) => (
+                      <Bubble key={m.id} msg={m} />
+                    ))}
+                    {isTyping && <TypingIndicator />}
+                  </>
+                )}
+              </div>
+              {/* Chat Input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  send();
+                }}
+                className="p-4 border-t"
+                style={{ borderColor: MEDIUM_GRAY }}
+              >
+                <div
+                  className="flex items-center gap-2 rounded-xl border p-2"
+                  style={{
+                    backgroundColor: MEDIUM_GRAY,
+                    borderColor: LIGHT_GRAY + "40",
+                  }}
+                >
+                  <input
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder="What's your mood or a movie?"
+                    className="flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-gray-400 focus:outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        send();
+                      }
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!draft.trim() || isTyping}
+                    className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all",
+                      !draft.trim() || isTyping
+                        ? "opacity-40 bg-gray-600"
+                        : "hover:scale-105 bg-gradient-to-br from-red-600 to-red-500"
+                    )}
+                    aria-label="Send message"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
 
-/* ───── bubble component ───── */
+// ──────────────────────────────────────────────────────────────────────────
+// ─── BUBBLE, TYPING, AND WELCOME COMPONENTS ──────────────────────────────
 function Bubble({ msg }: { msg: Msg }) {
-  const mine = msg.role === "user";
+  const isUser = msg.role === "user";
   return (
-    <div className={`flex ${mine ? "justify-end" : "justify-start"} px-2`}>
+    <motion.div
+      className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       <div
-        className={`max-w-2xl rounded-2xl px-6 py-4 text-base leading-relaxed shadow-lg
-                    transition-all duration-200 hover:scale-[1.02] ${
-          mine
-            ? "rounded-br-md bg-gradient-to-r from-[#E50914] to-[#bf0811] text-white shadow-[#E50914]/20"
-            : "rounded-bl-md bg-white/10 text-white/90 backdrop-blur-sm border border-white/10 shadow-black/20"
-        }`}
+        className={cn(
+          "w-fit max-w-[70%] rounded-xl px-4 py-3 text-sm shadow-lg",
+          isUser
+            ? "rounded-br-md"
+            : "rounded-bl-md border"
+        )}
+        style={
+          isUser
+            ? {
+                background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+                boxShadow: NEON_GLOW,
+              }
+            : {
+                backgroundColor: MEDIUM_GRAY,
+                borderColor: LIGHT_GRAY + "30",
+              }
+        }
       >
         {msg.content}
+        {isUser && (
+          <div className="flex justify-end mt-1">
+            <ThumbsUp className="w-3 h-3 text-white/60 hover:text-white cursor-pointer" />
+          </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
-/* ───── welcome panel ───── */
-function Welcome({ setDraft }: { setDraft: (d: string) => void }) {
-  const quick = [
-    ["Soirée frissons", "Horror · Thriller"],
-    ["Feel-good", "Comédie familiale"],
-    ["Chef-d'œuvre", "Note IMDb > 8"],
-  ];
-
+function TypingIndicator() {
   return (
-    <div className="mt-8 flex flex-col items-center text-center max-w-4xl mx-auto">
-      {/* enhanced brand-colored glow ring */}
-      <div className="mb-12 relative">
-        <div className="absolute inset-0 h-36 w-36 rounded-full bg-gradient-to-br
-                        from-[#E50914] to-[#bf0811] blur-xl opacity-30 animate-pulse" />
-        <div className="relative h-36 w-36 rounded-full bg-gradient-to-br
-                        from-[#E50914] to-[#bf0811] p-1 shadow-2xl">
-          <div className="h-full w-full rounded-full bg-[#141414]/90 backdrop-blur-sm
-                          flex items-center justify-center">
-            <span className="text-4xl">🎬</span>
+    <div className="flex justify-start">
+      <div
+        className="rounded-xl rounded-bl-md px-4 py-3 border"
+        style={{
+          backgroundColor: MEDIUM_GRAY,
+          borderColor: LIGHT_GRAY + "30",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <div className="flex gap-0.5">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full animate-bounce"
+                style={{
+                  background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+                  animationDelay: `${i * 0.12}s`,
+                }}
+              />
+            ))}
           </div>
+          <span className="text-xs" style={{ color: LIGHT_GRAY }}>
+            Looking for great films...
+          </span>
         </div>
       </div>
+    </div>
+  );
+}
 
-      <h2 className="mb-4 text-4xl font-extrabold tracking-tight">
-        Salut&nbsp;<span className="bg-gradient-to-r from-[#E50914] to-[#bf0811] bg-clip-text text-transparent">cinéphile</span>&nbsp;!
-      </h2>
-      <p className="mb-16 max-w-2xl text-lg text-white/70 leading-relaxed">
-        Dis-moi ton humeur, un acteur ou un genre ; je te trouverai le film
-        parfait pour ta soirée.
-      </p>
-
-      <div className="mb-16 grid gap-6 w-full max-w-3xl
-                      grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {quick.map(([title, hint], index) => (
-          <button
-            key={title}
-            onClick={() => setDraft(title)}
-            className="group rounded-2xl bg-white/5 backdrop-blur-sm p-8 text-sm 
-                       border border-white/10 hover:bg-white/10 hover:border-white/20
-                       transition-all duration-300 hover:scale-105 hover:shadow-xl
-                       hover:shadow-[#E50914]/10"
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-            <div className="mb-2 text-lg font-semibold group-hover:text-[#E50914] transition-colors">
-              {title}
-            </div>
-            <p className="text-sm text-white/60 group-hover:text-white/80 transition-colors">
-              {hint}
-            </p>
-          </button>
-        ))}
+// Welcome screen with prompt suggestions
+function Welcome({ setDraft }: { setDraft: (d: string) => void }) {
+  const suggestions = [
+    {
+      title: "Action & Adventure",
+      description: "Edge-of-your-seat movies",
+      emoji: "⚡",
+      query: "Best new action adventure movies",
+    },
+    {
+      title: "Comedy Night",
+      description: "Laugh with friends",
+      emoji: "😂",
+      query: "funny comedies for tonight",
+    },
+    {
+      title: "Romantic Picks",
+      description: "Love and feels",
+      emoji: "💖",
+      query: "top romantic comedies",
+    },
+    {
+      title: "Sci-Fi Thrillers",
+      description: "Mind-bending stories",
+      emoji: "👽",
+      query: "best sci-fi thrillers",
+    },
+    {
+      title: "Family Favorites",
+      description: "For all ages",
+      emoji: "👨‍👩‍👧‍👦",
+      query: "great family movies",
+    },
+    {
+      title: "Hidden Gems",
+      description: "Underrated picks",
+      emoji: "💎",
+      query: "underrated movies worth watching",
+    },
+  ];
+  
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[230px] space-y-6 text-center">
+      <div className="space-y-2">
+        <motion.div
+          className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto text-white text-xl font-bold shadow-lg"
+          style={{
+            background: `linear-gradient(135deg, ${NETFLIX_RED} 0%, ${NETFLIX_RED_LIGHT} 100%)`,
+            boxShadow: NEON_GLOW,
+          }}
+          animate={{
+            scale: [1, 1.05, 1],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+          }}
+        >
+          <Popcorn className="w-6 h-6" />
+        </motion.div>
+        <h2 className="text-2xl font-bold text-white tracking-tight">
+          What do you want to watch?
+        </h2>
+        <p className="max-w-md text-base" style={{ color: LIGHT_GRAY }}>
+          Tell me a mood or a movie, I'll do the rest.
+        </p>
       </div>
-
-      <div className="mx-auto flex max-w-md justify-between text-base">
-        {["Général", "Genre", "Humeur", "Acteur"].map((t, i) => (
-          <span
-            key={t}
-            className={`cursor-pointer pb-2 px-3 transition-all duration-200 ${
-              i === 0
-                ? "border-b-2 border-[#E50914] text-white font-medium"
-                : "text-white/50 hover:text-white/80 hover:scale-105"
-            }`}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-3xl">
+        {suggestions.map((suggestion) => (
+          <motion.button
+            key={suggestion.title}
+            onClick={() => setDraft(suggestion.query)}
+            className="p-4 rounded-xl border text-center group hover:scale-105 transition-all"
+            style={{
+              backgroundColor: MEDIUM_GRAY,
+              borderColor: "#262626",
+              color: "white",
+            }}
+            whileHover={{
+              borderColor: NETFLIX_RED_LIGHT,
+              boxShadow: NEON_GLOW,
+            }}
+            whileTap={{ scale: 0.97 }}
           >
-            {t}
-          </span>
+            <div className="text-2xl mb-2">{suggestion.emoji}</div>
+            <h3 className="font-bold text-base mb-0.5 group-hover:text-[#FF2121] transition-colors">
+              {suggestion.title}
+            </h3>
+            <p className="text-xs text-gray-400">{suggestion.description}</p>
+          </motion.button>
         ))}
       </div>
     </div>
   );
 }
+
+// ──────────────────────────────────────────────────────────────────────────
