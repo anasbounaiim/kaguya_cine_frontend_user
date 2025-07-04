@@ -39,7 +39,7 @@ export default function SignUpPage() {
       const { jwt } = await res.json();
       localStorage.setItem("token", jwt);
       router.push("/account");
-    } catch (error) {
+    } catch {
       setErr("Erreur de connexion. Veuillez réessayer.");
       setLoading(false);
     }

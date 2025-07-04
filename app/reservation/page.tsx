@@ -14,9 +14,7 @@
    import { Button } from '@/components/ui/button'
    import { Badge } from '@/components/ui/badge'
    import { 
-     X, 
-     Check, 
-     Home, 
+     X,
      MapPin, 
      Calendar, 
      Clock, 
@@ -101,7 +99,13 @@
      const cinema = qs.get('cinema') ?? 'Pathé Californie'
    
      /* ─ movie meta fetch ─ */
-     const [movie, setMovie] = useState<any | null>(null)
+     type Movie = {
+       backdrop_path?: string;
+       title?: string;
+       vote_average?: number;
+       // Add other properties you use from the movie object if needed
+     };
+     const [movie, setMovie] = useState<Movie | null>(null)
      const [loading, setLoading] = useState(true)
      
      useEffect(() => {
@@ -120,7 +124,11 @@
        if (taken) return
        setChosen(p => {
          const n = new Set(p)
-         n.has(id) ? n.delete(id) : n.add(id)
+         if (n.has(id)) {
+           n.delete(id)
+         } else {
+           n.add(id)
+         }
          return n
        })
      }
@@ -161,7 +169,7 @@
                  <>
                    <Image
                      src={`https://image.tmdb.org/t/p/w780${movie.backdrop_path}`}
-                     alt={movie.title}
+                     alt={movie.title ?? 'Affiche du film'}
                      fill priority
                      className="object-cover"
                    />

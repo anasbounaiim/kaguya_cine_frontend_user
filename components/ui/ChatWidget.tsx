@@ -13,7 +13,6 @@ import {
   Play,
   Plus,
   X,
-  Film,
   TrendingUp,
   Sparkles,
   ThumbsUp,
@@ -34,7 +33,6 @@ const DEEP_BLACK = "#000000";
 const DARK_GRAY = "#141414";
 const MEDIUM_GRAY = "#232323";
 const LIGHT_GRAY = "#B3B3B3";
-const WHITE = "#FFFFFF";
 const NEON_GLOW = `0 0 8px ${NETFLIX_RED_LIGHT}80, 0 0 16px ${NETFLIX_RED_LIGHT}40`;
 
 // ─── TYPE DEFINITIONS ─────────────────────────────────────────────────────
@@ -495,7 +493,7 @@ export default function ChatWidget() {
         ...m,
         { role: "assistant", content: <AssistantMessage data={data} />, id: Date.now().toString() },
       ]);
-    } catch (err) {
+    } catch {
       setIsTyping(false);
       setMsgs((m) => [
         ...m,
@@ -539,10 +537,10 @@ export default function ChatWidget() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <Film className="w-6 h-6 group-hover:scale-110 transition-transform" />
+        <MessageCircle className="w-6 h-6 group-hover:scale-110 transition-transform" />
         <span className="sr-only">Open Movie Companion</span>
-        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center">
-          <Sparkles className="w-2.5 h-2.5 text-red-500" />
+        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center">
+          <Sparkles className="w-3.5 h-3.5 text-white" />
         </div>
       </motion.button>
 
@@ -805,7 +803,7 @@ function Welcome({ setDraft }: { setDraft: (d: string) => void }) {
           What do you want to watch?
         </h2>
         <p className="max-w-md text-base" style={{ color: LIGHT_GRAY }}>
-          Tell me a mood or a movie, I'll do the rest.
+          Tell me a mood or a movie, I&#39;ll do the rest.
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-3xl">
