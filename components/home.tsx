@@ -10,8 +10,7 @@ import {
   Plus, 
   Info, 
   Star, 
-  Calendar, 
-  Clock,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   Volume2,
@@ -143,7 +142,7 @@ export default function HomePage({
               className="border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 px-6 py-2"
             >
               <Info className="mr-2 h-4 w-4" />
-              Plus d'infos
+              Plus d&#39;infos
             </Button>
 
             {/* icon fabs */}

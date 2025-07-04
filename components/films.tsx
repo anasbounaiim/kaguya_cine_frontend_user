@@ -30,11 +30,9 @@ export default function FilmsPage() {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
-      const wantedStart = (page - 1) * PER_PAGE;
-      const wantedEnd   = wantedStart + PER_PAGE;
 
       const collected: Movie[] = [];
-      let apiPage = page;                    // start at same index
+      let apiPage = page;
       while (collected.length < PER_PAGE && apiPage <= MAX_PAGES) {
         const url = `https://api.themoviedb.org/3/movie/popular?api_key=${KEY}&language=en-US&page=${apiPage}`;
         const res = await fetch(url).then(r => r.json());

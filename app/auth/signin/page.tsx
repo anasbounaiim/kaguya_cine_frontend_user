@@ -33,7 +33,7 @@ export default function SignInPage() {
       const { jwt } = await res.json();
       localStorage.setItem("token", jwt);
       router.push("/account");
-    } catch (error) {
+    } catch {
       setErr("Erreur de connexion. Veuillez réessayer.");
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export default function SignInPage() {
           <p className="text-gray-400 text-sm">
             Pas encore de compte ?{" "}
             <Link href="/auth/signup" className="text-red-400 hover:text-red-300 hover:underline font-medium">
-              S'inscrire
+              S&#39;inscrire
             </Link>
           </p>
         </div>

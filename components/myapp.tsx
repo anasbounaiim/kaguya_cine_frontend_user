@@ -2,9 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Globe } from "lucide-react";
 import HomePage  from "./home";
 import FilmsPage from "./films";
 
@@ -23,13 +20,8 @@ type Screen = "home" | "films" | "reservation" | "contact";
 export default function CinematicHome() {
   const [movies, setMovies]     = useState<Movie[]>([]);
   const [genreMovies, setGenre] = useState<Record<string, Movie[]>>({});
-  const [screen, setScreen]     = useState<Screen>("home");
+  const [screen] = useState<Screen>("home");
 
-  /* helper: change section + scroll up (still used by logo) */
-  const goto = (id: Screen) => {
-    setScreen(id);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   /* fetch once */
   useEffect(() => {
