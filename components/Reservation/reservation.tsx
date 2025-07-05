@@ -156,7 +156,7 @@
    
      /* ─────────────────────────── JSX ────────────────────────────── */
      return (
-       <div>
+       <div className='flex'>
    
          {/* ░░ Enhanced Left Sidebar ░░ */}
          <aside className="w-full max-w-[380px] bg-black/60 backdrop-blur-xl border-r border-white/10">

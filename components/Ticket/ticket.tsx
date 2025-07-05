@@ -192,7 +192,7 @@
    
          {/* Main Content */}
          <main className="relative z-10 px-6 pb-12">
-           <div className="max-w-4xl mx-auto">
+           <div className="max-w-2xl w-[600px] mx-auto">
              {/* Success Badge */}
              <div className="flex justify-center mb-8">
                <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-2">
