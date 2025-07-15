@@ -3,10 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState }  from "react";
 import Link          from "next/link";
+import api from "@/utils/apiFetch";
+import toast from "react-hot-toast";
+import { useAuthStore } from "@/store/AuthStore";
 
 export default function SignIn() {
   const router       = useRouter();
-  const [form,set]   = useState({ email:"", pass:"" });
+  const [form,set]   = useState({ email:"", password:"" });
   const [err,setErr] = useState("");
   const [loading,setLoading] = useState(false);
 
@@ -14,27 +17,37 @@ export default function SignIn() {
     e.preventDefault();
     setLoading(true);
     setErr("");
+
+    const data = { 
+      email:form.email, password:form.password 
+    };
     
     try {
-      const res = await fetch("/api/auth/login", {
-        method:"POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email:form.email, password:form.pass }),
-      });
-      
-      if(!res.ok){ 
-        const errorData = await res.json();
-        setErr(errorData.error || "Une erreur s'est produite"); 
-        setLoading(false);
-        return; 
-      }
-      
-      const { jwt } = await res.json();
-      localStorage.setItem("token", jwt);
-      router.push("/account");
-    } catch {
-      setErr("Erreur de connexion. Veuillez réessayer.");
+      const response = await api.post('/api/auth/login', data);
+      console.log("response login :", response);
+
+      useAuthStore.getState().setIsAuthenticated(response.authenticated);
+
+      toast.success("Login successful!",{
+        duration: 5000,
+        style: {
+          border: '1px solid #4ade80',
+          background: '#ecfdf5',
+          color: '#065f46',
+        }
+      })
+      router.push("/")
+    } catch (err: unknown) {
       setLoading(false);
+      console.error("Login error", err)
+      toast.error("Login failed",{
+        duration: 5000,
+        style: {
+          border: '1px solid #f87171',
+          background: '#fee2e2',
+          color: '#b91c1c',
+        }
+      })
     }
   }
 
@@ -60,8 +73,8 @@ export default function SignIn() {
           <Input 
             label="Mot de passe" 
             type="password" 
-            value={form.pass}
-            onChange={v=>set(f=>({...f,pass:v}))}
+            value={form.password}
+            onChange={v=>set(f=>({...f,password:v}))}
             placeholder="Mot de passe"
           />
 

@@ -3,13 +3,18 @@
 import React, { useState, useRef } from 'react';
 import {
   Ticket, User2, Mail, MapPin, Star, Film, Shield, Settings,
-  Camera, X, Edit3, Share2, Heart,
+  Camera, X, Share2, Heart,
   Calendar, Clock, Plus, Search, ChevronDown, Award, Target,
   Zap, TrendingUp, Users, Gift, Sparkles, Crown, Phone, Home, Globe,
   Lock, Moon, Volume2, CheckCircle, QrCode, Printer,
   Bell
 } from 'lucide-react';
 import Image from 'next/image';
+import { Button } from '../ui/button';
+import api from '@/utils/apiFetch';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/AuthStore';
 
 type Tab = "tickets" | "personal" | "preferences" | "contact" | "membership" | "rewards";
 
@@ -83,12 +88,12 @@ export default function Account() {
               <span className="text-red-400 font-medium">Jan 2023</span>
             </div>
           </div>
-          
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-2 text-sm">
               <Sparkles size={16} className="text-yellow-400" />
               <span className="text-yellow-400 font-medium">{user.points} pts</span>
             </div>
+            
             <div className="relative">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-sm font-semibold shadow-lg">
                 {user.avatar ? (
@@ -292,6 +297,34 @@ function EnhancedPersonalView() {
     profession: "Développeur",
   });
 
+  const router = useRouter();
+
+  const logout = async () => {
+    try {
+      await api.post("/api/auth/logout", {});
+      useAuthStore.getState().setIsAuthenticated(false);
+      useAuthStore.getState().setProfile({ firstName: '', lastName: '', email: '', role: '' });
+      toast.success("Déconnexion réussie !", {
+        duration: 5000,
+        style: {
+          border: "1px solid #4ade80",
+          background: "#ecfdf5",
+          color: "#065f46",
+        },
+      });
+      router.push("/");
+    } catch {
+      toast.error("Erreur lors de la déconnexion", {
+        duration: 5000,
+        style: {
+          border: "1px solid #f87171",
+          background: "#fee2e2",
+          color: "#b91c1c",
+        },
+      });
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Profile Header */}
@@ -314,14 +347,21 @@ function EnhancedPersonalView() {
               <span className="text-sm text-gray-500">Membre depuis Jan 2023</span>
             </div>
           </div>
+
+          <div className='flex flex-col items-center gap-4'>
+            <Button
+             onClick={logout}
+             className="rounded-lg w-36 border border-[#E50914] text-[#E50914] px-5 hover:bg-red-700 hover:text-white">
+              Déconnexion
+            </Button>
+            <Button
+              onClick={() => setEditMode(!editMode)}
+              className="flex w-36 items-center gap-2 py-2 bg-red-600 hover:bg-red-700 px-5 rounded-lg transition-colors"
+            >
+              {editMode ? 'Annuler' : 'Modifier'}
+            </Button>
+          </div>
           
-          <button
-            onClick={() => setEditMode(!editMode)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-          >
-            <Edit3 size={16} />
-            {editMode ? 'Annuler' : 'Modifier'}
-          </button>
         </div>
       </Card>
 

@@ -1,13 +1,15 @@
-// app/auth/signup/page.tsx  – Sign-up
 "use client";
 
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import { useState }  from "react";
 import Link          from "next/link";
+import toast from "react-hot-toast";
+import api from "@/utils/apiFetch";
+import { useRouter } from "next/navigation";
 
 export default function SignUp() {
   const router       = useRouter();
-  const [form,set]   = useState({ email:"", pass:"", confirm:"" });
+  const [form,set]   = useState({ firstName: "", lastName:"", email:"", password:"", confirm:"" });
   const [err,setErr] = useState("");
   const [loading,setLoading] = useState(false);
 
@@ -16,30 +18,42 @@ export default function SignUp() {
     setLoading(true);
     setErr("");
     
-    if(form.pass!==form.confirm){ 
+    if(form.password!==form.confirm){ 
       setErr("Les mots de passe ne correspondent pas."); 
       setLoading(false);
       return; 
     }
+
+    const data = { 
+      firstName: form.firstName, lastName: form.lastName, email:form.email, password:form.password 
+    };
     
     try {
-      const res = await fetch("/api/auth/register",{
-        method:"POST",
-        headers: { "Content-Type": "application/json" },
-        body:JSON.stringify({ email:form.email, password:form.pass }),
-      });
+      const response = await api.post("/api/auth/register", data);
       
-      if(!res.ok){ 
-        const errorData = await res.json();
-        setErr(errorData.error || "Une erreur s'est produite"); 
-        setLoading(false);
-        return; 
-      }
+      console.log("response register :", response.data)
+      toast.success("Account created ",{
+        duration: 5000,
+        style: {
+          border: '1px solid #4ade80',
+          background: '#ecfdf5',
+          color: '#065f46',
+        }
+      })
+
+      console.log("Account created successfully");
       
-      const { jwt } = await res.json();
-      localStorage.setItem("token", jwt);
-      router.push("/account");
+      router.push("/auth/signin");
+
     } catch {
+      toast.error("Erreur de connexion. Veuillez réessayer.",{
+        duration: 5000,
+        style: {
+          border: '1px solid #f87171',
+          background: '#fee2e2',
+          color: '#b91c1c',
+        }
+      })
       setErr("Erreur de connexion. Veuillez réessayer.");
       setLoading(false);
     }
@@ -57,6 +71,22 @@ export default function SignUp() {
         {/* Form */}
         <form onSubmit={submit} className="space-y-4">
           <Input 
+            label="Prénom" 
+            type="text" 
+            value={form.firstName}
+            onChange={v=>set(f=>({...f,firstName:v}))}
+            placeholder="Tapez votre prénom"
+          />
+
+          <Input 
+            label="Nom" 
+            type="text" 
+            value={form.lastName}
+            onChange={v=>set(f=>({...f,lastName:v}))}
+            placeholder="Tapez votre nom"
+          />
+
+          <Input 
             label="Email" 
             type="email" 
             value={form.email}
@@ -67,8 +97,8 @@ export default function SignUp() {
           <Input 
             label="Mot de passe" 
             type="password" 
-            value={form.pass}
-            onChange={v=>set(f=>({...f,pass:v}))}
+            value={form.password}
+            onChange={v=>set(f=>({...f,password:v}))}
             placeholder="Mot de passe"
           />
           
