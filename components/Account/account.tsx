@@ -64,9 +64,11 @@ const mockWatchlist = [
 
 export default function Account() {
   const [activeTab, setActiveTab] = useState<Tab>("tickets");
+  const profile = useAuthStore((state) => state.profile);
   const [user] = useState({
-    name: 'Anas Bounaim',
-    email: 'anas@example.com',
+    firstName: profile?.firstName,
+    lastName: profile?.lastName,
+    email: profile?.email,
     avatar: null,
     memberSince: '2023-01-15',
     totalSpent: 2450,
@@ -99,7 +101,7 @@ export default function Account() {
                 {user.avatar ? (
                   <Image width={40} height={40} src={user.avatar} alt="Avatar" className="h-full w-full rounded-full object-cover" />
                 ) : (
-                  user.name.split(' ').map(n => n[0]).join('')
+                  <span className="text-white">{user.firstName ? user.firstName[0].toUpperCase() : ""}{user.lastName ? user.lastName[0].toUpperCase() : ""}</span>
                 )}
               </div>
               <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-black"></div>
@@ -285,12 +287,13 @@ function EnhancedTicketsView() {
 
 function EnhancedPersonalView() {
   const [editMode, setEditMode] = useState(false);
+  const profile = useAuthStore((state) => state.profile);
   const [form, setForm] = useState({
     civilite: "Monsieur",
-    prenom: "Anas",
-    nom: "Bounaim",
+    prenom: profile?.firstName,
+    nom: profile?.lastName,
     birth: "2001-06-04",
-    email: "anas@example.com",
+    email: profile?.email,
     phone: "+212 6 12 34 56 78",
     address: "Casablanca, Maroc",
     nationality: "Marocaine",
@@ -332,7 +335,7 @@ function EnhancedPersonalView() {
         <div className="flex items-center gap-6">
           <div className="relative">
             <div className="h-20 w-20 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-2xl font-bold">
-              AB
+              {form.prenom ? form.prenom[0].toUpperCase() : ""}{form.nom ? form.nom[0].toUpperCase() : ""}
             </div>
             <button className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors">
               <Camera size={14} />
@@ -393,14 +396,14 @@ function EnhancedPersonalView() {
           <div className="grid gap-6 md:grid-cols-2">
             <InputField
               label="Prénom"
-              value={form.prenom}
+              value={form.prenom ?? ""}
               onChange={(v) => setForm((f) => ({ ...f, prenom: v }))}
               disabled={!editMode}
               required
             />
             <InputField
               label="Nom"
-              value={form.nom}
+              value={form.nom ?? ""}
               onChange={(v) => setForm((f) => ({ ...f, nom: v }))}
               disabled={!editMode}
               required
@@ -412,7 +415,7 @@ function EnhancedPersonalView() {
             <InputField
               label="Email"
               type="email"
-              value={form.email}
+              value={form.email ?? ""}
               onChange={(v) => setForm((f) => ({ ...f, email: v }))}
               disabled={!editMode}
               rightIcon={<CheckCircle size={16} className="text-green-400" />}
@@ -1396,8 +1399,8 @@ function ToggleSwitch({
       }`}
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${
-          checked ? "translate-x-6" : "translate-x-0.5"
+        className={`absolute top-0.75 h-4.5 w-4.5 rounded-full bg-white shadow-lg transition-transform ${
+          checked ? "translate-x-1" : "-translate-x-5"
         }`}
       />
     </button>
