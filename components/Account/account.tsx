@@ -7,7 +7,8 @@ import {
   Calendar, Clock, Plus, Search, ChevronDown, Award, Target,
   Zap, TrendingUp, Users, Gift, Sparkles, Crown, Phone, Home, Globe,
   Lock, Moon, Volume2, CheckCircle, QrCode, Printer,
-  Bell
+  Bell,
+  Verified
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '../ui/button';
@@ -16,11 +17,11 @@ import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/AuthStore';
 
-type Tab = "tickets" | "personal" | "preferences" | "contact" | "membership" | "rewards";
+type Tab = "personal" | "tickets" | "preferences" | "contact" | "membership" | "rewards";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: "personal", label: "Mon profile", icon: User2 },
   { id: "tickets", label: "E-billets", icon: Ticket },
-  { id: "personal", label: "Mon profil", icon: User2 },
   { id: "preferences", label: "Préférences", icon: Settings },
   { id: "contact", label: "Support", icon: Mail },
   { id: "membership", label: "Abonnement", icon: Crown },
@@ -63,7 +64,7 @@ const mockWatchlist = [
 ];
 
 export default function Account() {
-  const [activeTab, setActiveTab] = useState<Tab>("tickets");
+  const [activeTab, setActiveTab] = useState<Tab>("personal");
   const profile = useAuthStore((state) => state.profile);
   const [user] = useState({
     firstName: profile?.firstName,
@@ -134,153 +135,13 @@ export default function Account() {
 
       {/* Enhanced Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-8">
-        {activeTab === "tickets" && <EnhancedTicketsView />}
         {activeTab === "personal" && <EnhancedPersonalView />}
+        {activeTab === "tickets" && <EnhancedTicketsView />}
         {activeTab === "preferences" && <EnhancedPreferencesView />}
         {activeTab === "contact" && <EnhancedContactView />}
         {activeTab === "membership" && <MembershipView />}
         {activeTab === "rewards" && <RewardsView />}
       </main>
-    </div>
-  );
-}
-
-function EnhancedTicketsView() {
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const ticketRef = useRef<HTMLDivElement>(null);
-
-  const filteredTickets = mockTickets.filter(ticket => {
-    const matchesSearch = ticket.movie.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  return (
-    <div className="space-y-8">
-      {/* Enhanced Stats Dashboard */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard 
-          icon={Ticket} 
-          label="Billets actifs" 
-          value="2" 
-          trend="+1"
-          color="red"
-        />
-        <StatCard 
-          icon={Film} 
-          label="Films vus" 
-          value="12" 
-          trend="+3"
-          color="blue"
-        />
-        <StatCard 
-          icon={Star} 
-          label="Note moyenne" 
-          value="4.2" 
-          trend="+0.3"
-          color="yellow"
-        />
-        <StatCard 
-          icon={Award} 
-          label="Points gagnés" 
-          value="1,250" 
-          trend="+150"
-          color="purple"
-        />
-      </div>
-
-      {/* Enhanced Tickets Section */}
-      <Card className="overflow-hidden">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <SectionTitle>Mes e-billets</SectionTitle>
-          
-          <div className="flex gap-2">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher un film..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-            </div>
-            
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-            >
-              <option value="all">Tous</option>
-              <option value="active">Actifs</option>
-              <option value="used">Utilisés</option>
-            </select>
-          </div>
-        </div>
-
-        {filteredTickets.length > 0 ? (
-          <div className="space-y-4">
-            {filteredTickets.map((ticket) => (
-              <TicketCard key={ticket.id} ticket={ticket} onPrint={() => {}} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon={Ticket}
-            title="Aucun e-billet trouvé"
-            text="Aucun billet ne correspond à vos critères de recherche."
-            ctaHref="/films"
-            cta="Réserver une séance"
-          />
-        )}
-      </Card>
-
-      {/* Enhanced Favorite Cinema */}
-      <Card>
-        <SectionTitle>Mon cinéma favori</SectionTitle>
-        <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 p-6 border border-red-500/20">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-orange-500">
-              <MapPin size={24} className="text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg">KaguyaCiné Casablanca</h3>
-              <p className="text-sm text-gray-400">Marina Shopping Center</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Star size={14} className="text-yellow-400 fill-current" />
-                <span className="text-sm text-yellow-400">4.8</span>
-                <span className="text-xs text-gray-500">• 15 min de trajet</span>
-              </div>
-            </div>
-          </div>
-          <button className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
-            Changer
-          </button>
-        </div>
-      </Card>
-
-      {/* Enhanced Watchlist */}
-      <Card>
-        <div className="flex items-center justify-between mb-6">
-          <SectionTitle>Ma liste de souhaits</SectionTitle>
-          <button className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors">
-            <Plus size={16} />
-            Ajouter
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {mockWatchlist.map((movie) => (
-            <WatchlistItem key={movie.id} movie={movie} />
-          ))}
-        </div>
-      </Card>
-
-      {/* Hidden Printable Ticket */}
-      <div className="hidden">
-        <EnhancedPrintableTicket ref={ticketRef} />
-      </div>
     </div>
   );
 }
@@ -343,12 +204,11 @@ function EnhancedPersonalView() {
           </div>
           
           <div className="flex-1">
-            <h2 className="text-2xl font-bold">{form.prenom} {form.nom}</h2>
+            <h2 className="text-2xl font-bold">
+              {form.prenom} {form.nom}
+              <Verified size={18} className="inline-block text-green-400 ml-2" />
+            </h2>
             <p className="text-gray-400">{form.email}</p>
-            <div className="flex items-center gap-4 mt-2">
-              <span className="text-sm text-green-400">✓ Compte vérifié</span>
-              <span className="text-sm text-gray-500">Membre depuis Jan 2023</span>
-            </div>
           </div>
 
           <div className='flex flex-col items-center gap-4'>
@@ -510,6 +370,148 @@ function EnhancedPersonalView() {
     </div>
   );
 }
+
+function EnhancedTicketsView() {
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const ticketRef = useRef<HTMLDivElement>(null);
+
+  const filteredTickets = mockTickets.filter(ticket => {
+    const matchesSearch = ticket.movie.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="space-y-8">
+      {/* Enhanced Stats Dashboard */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard 
+          icon={Ticket} 
+          label="Billets actifs" 
+          value="2" 
+          trend="+1"
+          color="red"
+        />
+        <StatCard 
+          icon={Film} 
+          label="Films vus" 
+          value="12" 
+          trend="+3"
+          color="blue"
+        />
+        <StatCard 
+          icon={Star} 
+          label="Note moyenne" 
+          value="4.2" 
+          trend="+0.3"
+          color="yellow"
+        />
+        <StatCard 
+          icon={Award} 
+          label="Points gagnés" 
+          value="1,250" 
+          trend="+150"
+          color="purple"
+        />
+      </div>
+
+      {/* Enhanced Tickets Section */}
+      <Card className="overflow-hidden">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <SectionTitle>Mes e-billets</SectionTitle>
+          
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher un film..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+            
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="all">Tous</option>
+              <option value="active">Actifs</option>
+              <option value="used">Utilisés</option>
+            </select>
+          </div>
+        </div>
+
+        {filteredTickets.length > 0 ? (
+          <div className="space-y-4">
+            {filteredTickets.map((ticket) => (
+              <TicketCard key={ticket.id} ticket={ticket} onPrint={() => {}} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={Ticket}
+            title="Aucun e-billet trouvé"
+            text="Aucun billet ne correspond à vos critères de recherche."
+            ctaHref="/films"
+            cta="Réserver une séance"
+          />
+        )}
+      </Card>
+
+      {/* Enhanced Favorite Cinema */}
+      <Card>
+        <SectionTitle>Mon cinéma favori</SectionTitle>
+        <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 p-6 border border-red-500/20">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-orange-500">
+              <MapPin size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">KaguyaCiné Casablanca</h3>
+              <p className="text-sm text-gray-400">Marina Shopping Center</p>
+              <div className="flex items-center gap-2 mt-1">
+                <Star size={14} className="text-yellow-400 fill-current" />
+                <span className="text-sm text-yellow-400">4.8</span>
+                <span className="text-xs text-gray-500">• 15 min de trajet</span>
+              </div>
+            </div>
+          </div>
+          <button className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
+            Changer
+          </button>
+        </div>
+      </Card>
+
+      {/* Enhanced Watchlist */}
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <SectionTitle>Ma liste de souhaits</SectionTitle>
+          <button className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors">
+            <Plus size={16} />
+            Ajouter
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {mockWatchlist.map((movie) => (
+            <WatchlistItem key={movie.id} movie={movie} />
+          ))}
+        </div>
+      </Card>
+
+      {/* Hidden Printable Ticket */}
+      <div className="hidden">
+        <EnhancedPrintableTicket ref={ticketRef} />
+      </div>
+    </div>
+  );
+}
+
+
 
 function EnhancedPreferencesView() {
   const [prefs, setPrefs] = useState({
