@@ -15,8 +15,8 @@ import {
   ChevronRight,
   Volume2,
   VolumeX,
-  Bookmark,
-  Share2
+  Share2,
+  Heart
 } from "lucide-react";
 
 interface Movie {
@@ -296,7 +296,7 @@ function MovieRail({
       {/* Movie Track */}
       <div
         ref={track}
-        className="flex gap-4 overflow-x-auto scroll-smooth pb-6 pr-6 scrollbar-hide"
+        className="flex gap-4 overflow-x-auto scroll-smooth pb-16 pr-6 scrollbar-hide"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {movies.map((movie, index) => (
@@ -354,19 +354,19 @@ function MovieRail({
                     >
                       <Play className="h-3 w-3 fill-current" />
                     </Button>
-                    <Button
+                    {/* <Button
                       size="sm"
                       variant="ghost"
                       className="h-8 w-8 rounded-full border border-white/30 bg-white/10 p-0 text-white hover:bg-white/20"
                     >
                       <Plus className="h-3 w-3" />
-                    </Button>
+                    </Button> */}
                     <Button
                       size="sm"
                       variant="ghost"
                       className="h-8 w-8 rounded-full border border-white/30 bg-white/10 p-0 text-white hover:bg-white/20"
                     >
-                      <Bookmark className="h-3 w-3" />
+                      <Heart className="h-3 w-3" />
                     </Button>
                   </div>
                   
