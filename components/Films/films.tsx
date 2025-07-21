@@ -9,10 +9,12 @@ import {
   ChevronRight,
   Filter,
   Grid3X3,
+  Heart,
   List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import apiCatalog from "@/utils/catalogApiFetch";
+import toast from "react-hot-toast";
 
 interface Movie {
   movieId: number;
@@ -23,7 +25,7 @@ interface Movie {
   overview?: string;
 }
 
-const PER_PAGE = 10;
+const PER_PAGE = 12;
 
 export default function Films() {
   const [page, setPage] = useState(1);
@@ -31,6 +33,8 @@ export default function Films() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +56,19 @@ export default function Films() {
         setLoading(false);
       }
     };
+    const loadFavorites = async () => {
+      try {
+        const res = await apiCatalog.get("/api/users/watchlist");
+        const ids = res.map((m: { movieId: number }) => m.movieId);
+        setFavoriteIds(ids);
+      } catch (err) {
+        console.error("Failed to load favorites", err);
+      }
+    };
+
     load();
+    loadFavorites();
+
     return () => {
       cancelled = true;
     };
@@ -138,7 +154,12 @@ export default function Films() {
             loading ? (
               <SkeletonCard key={i} viewMode={viewMode} />
             ) : (
-              <MovieCard key={(m as Movie).movieId} movie={m as Movie} viewMode={viewMode} />
+              <MovieCard 
+                key={(m as Movie).movieId} 
+                movie={m as Movie} 
+                viewMode={viewMode}
+                isFavorite={favoriteIds.includes((m as Movie).movieId)}
+              />
             )
           )}
         </div>
@@ -198,8 +219,53 @@ export default function Films() {
   );
 }
 
-function MovieCard({ movie, viewMode }: { movie: Movie; viewMode: "grid" | "list" }) {
+function MovieCard({ movie, viewMode, isFavorite: initialIsFavorite, }: { movie: Movie; viewMode: "grid" | "list", isFavorite: boolean; }) {
   const year = new Date(movie.releaseDate).getFullYear();
+  const [isFavorited, setIsFavorited] = useState(initialIsFavorite);
+
+  const toggleFavoris = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      if (isFavorited) {
+        await apiCatalog.delete(`/api/users/watchlist/${movie.movieId}`);
+        toast.success(`${movie.title} retiré des favoris`, {
+          duration: 5000,
+          style: {
+            border: '1px solid #4ade80',
+            background: '#ecfdf5',
+            color: '#065f46',
+          },
+        });
+      } else {
+        await apiCatalog.post('/api/users/watchlist', { movieId: movie.movieId });
+        toast.success(`${movie.title} ajouté aux favoris`, {
+          duration: 5000,
+          style: {
+            border: '1px solid #4ade80',
+            background: '#ecfdf5',
+            color: '#065f46',
+          },
+        });
+      }
+
+      setIsFavorited(!isFavorited);
+    } catch (err) {
+      console.error("Erreur lors du changement de favoris", err);
+      toast.error("Échec de la mise à jour des favoris", {
+        duration: 5000,
+        style: {
+          border: '1px solid #f87171',
+          background: '#fee2e2',
+          color: '#b91c1c',
+        },
+      });
+    }
+  };
+
 
   if (viewMode === "list") {
     return (
@@ -232,7 +298,7 @@ function MovieCard({ movie, viewMode }: { movie: Movie; viewMode: "grid" | "list
 
   return (
     <Link href={`/movies/${movie.movieId}`} className="block group">
-      <div className="relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#E50914]/20">
+      <div className="relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-[#E50914]/20 group">
         <Image
           src={movie.posterUrl}
           alt={movie.title}
@@ -240,13 +306,36 @@ function MovieCard({ movie, viewMode }: { movie: Movie; viewMode: "grid" | "list
           height={600}
           className="aspect-[2/3] w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
-        <div className="p-3 bg-[#1a1a1a] border-t border-white/10">
-          <p className="text-sm font-medium truncate group-hover:text-[#E50914] transition-colors">
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex flex-col justify-end p-4">
+          <h3 className="mb-2 text-sm font-semibold text-white line-clamp-2">
             {movie.title}
-          </p>
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-white/60">{year}</span>
+          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              onClick={toggleFavoris}
+              size="sm"
+              variant="ghost"
+              className={`h-8 w-8 rounded-full border border-white/30 bg-white/10 p-0 ${
+                isFavorited ? "text-red-500" : "text-white"
+              } hover:bg-white/20`}
+            >
+              <Heart className="h-3 w-3" fill={isFavorited ? "currentColor" : "none"} />
+            </Button>
+            <h4>
+              <span className="text-xs text-white/60">{year}</span>
+            </h4>
           </div>
+        </div>
+
+      </div>
+      <div className="p-3">
+        <p className="text-sm font-medium truncate group-hover:text-[#E50914] transition-colors">
+          {movie.title}
+        </p>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-xs text-white/60">{year}</span>
         </div>
       </div>
     </Link>

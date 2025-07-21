@@ -1,26 +1,29 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Ticket, User2, Mail, MapPin, Star, Film, Shield, Settings,
-  Camera, X, Share2, Heart,
+  Camera, Share2, Heart,
   Calendar, Clock, Plus, Search, ChevronDown, Award, Target,
   Zap, TrendingUp, Users, Gift, Sparkles, Crown, Phone, Home, Globe,
   Lock, Moon, Volume2, CheckCircle, QrCode, Printer,
   Bell,
-  Verified
+  Verified,
+  Trash2Icon
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import api from '@/utils/apiFetch';
 import toast from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/AuthStore';
+import apiCatalog from '@/utils/catalogApiFetch';
 
-type Tab = "personal" | "tickets" | "preferences" | "contact" | "membership" | "rewards";
+type Tab = "personal" | "favorites" | "tickets" | "preferences" | "contact" | "membership" | "rewards";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "personal", label: "Mon profile", icon: User2 },
+  { id: "favorites", label: "Favoris", icon: Heart },
   { id: "tickets", label: "E-billets", icon: Ticket },
   { id: "preferences", label: "Préférences", icon: Settings },
   { id: "contact", label: "Support", icon: Mail },
@@ -56,15 +59,10 @@ const mockTickets = [
   }
 ];
 
-const mockWatchlist = [
-  { id: 1, title: 'Oppenheimer', poster: '/api/placeholder/300/450', rating: 8.9 },
-  { id: 2, title: 'Barbie', poster: '/api/placeholder/300/450', rating: 7.8 },
-  { id: 3, title: 'Spider-Man', poster: '/api/placeholder/300/450', rating: 8.2 },
-  { id: 4, title: 'The Batman', poster: '/api/placeholder/300/450', rating: 8.5 }
-];
-
 export default function Account() {
-  const [activeTab, setActiveTab] = useState<Tab>("personal");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab) ?? "personal";
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const profile = useAuthStore((state) => state.profile);
   const [user] = useState({
     firstName: profile?.firstName,
@@ -136,6 +134,7 @@ export default function Account() {
       {/* Enhanced Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-8">
         {activeTab === "personal" && <EnhancedPersonalView />}
+        {activeTab === "favorites" && <FavoritesView />}
         {activeTab === "tickets" && <EnhancedTicketsView />}
         {activeTab === "preferences" && <EnhancedPreferencesView />}
         {activeTab === "contact" && <EnhancedContactView />}
@@ -371,6 +370,147 @@ function EnhancedPersonalView() {
   );
 }
 
+type FavMovie = {
+  movieId: number;
+  title: string;
+  posterUrl: string;
+  voteAverage?: number;
+};
+
+function FavoritesView() {
+  const [favorites, setFavorites] = useState<FavMovie[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ── charger la watch‑list au montage ────────────────── */
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await apiCatalog.get("/api/users/watchlist");
+        setFavorites(res);
+      } catch (err) {
+        console.error("Failed to load favorites", err);
+        toast.error("Impossible de charger vos favoris");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  /* ── retirer un film des favoris ─────────────────────── */
+  const removeFavorite = async (movieId: number) => {
+    try {
+      await apiCatalog.delete(`/api/users/watchlist/${movieId}`);
+      setFavorites((prev) => prev.filter((m) => m.movieId !== movieId));
+      toast.success("Film retiré de vos favoris");
+    } catch (err) {
+      console.error("Failed to remove favorite", err);
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  /* ── rendu ───────────────────────────────────────────── */
+  return (
+    <div className="space-y-8">
+      <Card>
+        <SectionTitle>Mes films favoris</SectionTitle>
+
+        {loading ? (
+          <p className="text-sm text-gray-400 py-8">Chargement…</p>
+        ) : favorites.length === 0 ? (
+          <EmptyState
+            icon={Heart}
+            title="Aucun film en favori"
+            text="Ajoutez des films à votre liste de favoris pour les retrouver facilement."
+            ctaHref="/films"
+            cta="Explorer les films"
+          />
+        ) : (
+          <div className="grid grid-cols-4 md:grid-cols-6 gap-4">
+            {favorites.map((movie) => (
+              <div key={movie.movieId} className="relative group">
+                <Image
+                  src={movie.posterUrl}
+                  alt={movie.title}
+                  width={300}
+                  height={450}
+                  className="aspect-[2/3] rounded-lg object-cover"
+                />
+
+                {/* delete button */}
+
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex flex-col justify-end p-4 rounded-lg">
+                  <button
+                    onClick={() => removeFavorite(movie.movieId)}
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                  >
+                    <Trash2Icon className='text-red-500' size={14} />
+                  </button>
+                  <h3 className="mb-2 text-xs font-semibold text-white line-clamp-2">
+                    {movie.title}
+                  </h3>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// function FavoritesView() {
+//   const [favorites, setFavorites] = useState<WatchlistMovie[]>([
+//     { id: 1, title: 'Inception', poster: '/api/placeholder/300/450', rating: 8.7 },
+//     { id: 2, title: 'Interstellar', poster: '/api/placeholder/300/450', rating: 8.9 },
+//     { id: 3, title: 'Tenet', poster: '/api/placeholder/300/450', rating: 7.5 },
+//   ]);
+
+//   const removeFavorite = (id: number) => {
+//     setFavorites((prev) => prev.filter((movie) => movie.id !== id));
+//   };
+
+//   return (
+//     <div className="space-y-8">
+//       <Card>
+//         <SectionTitle>Mes films favoris</SectionTitle>
+//         {favorites.length === 0 ? (
+//           <EmptyState
+//             icon={Heart}
+//             title="Aucun film en favori"
+//             text="Ajoutez des films à votre liste de favoris pour les retrouver facilement."
+//             ctaHref="/films"
+//             cta="Explorer les films"
+//           />
+//         ) : (
+//           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+//             {favorites.map((movie) => (
+//               <div key={movie.id} className="relative group">
+//                 <div className="aspect-[2/3] rounded-lg overflow-hidden bg-gray-800">
+//                   <div className="w-full h-full bg-gradient-to-b from-gray-700 to-gray-800" />
+//                 </div>
+//                 <div className="absolute bottom-2 left-2 right-2">
+//                   <div className="flex items-center gap-1">
+//                     <Star size={12} className="text-yellow-400 fill-current" />
+//                     <span className="text-xs text-white font-medium">{movie.rating}</span>
+//                   </div>
+//                 </div>
+//                 <button
+//                   onClick={() => removeFavorite(movie.id)}
+//                   className="absolute top-2 right-2 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+//                 >
+//                   <X size={14} />
+//                 </button>
+//               </div>
+//             ))}
+//           </div>
+//         )}
+//       </Card>
+//     </div>
+//   );
+// }
+
+
 function EnhancedTicketsView() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -483,23 +623,6 @@ function EnhancedTicketsView() {
           <button className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors">
             Changer
           </button>
-        </div>
-      </Card>
-
-      {/* Enhanced Watchlist */}
-      <Card>
-        <div className="flex items-center justify-between mb-6">
-          <SectionTitle>Ma liste de souhaits</SectionTitle>
-          <button className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors">
-            <Plus size={16} />
-            Ajouter
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {mockWatchlist.map((movie) => (
-            <WatchlistItem key={movie.id} movie={movie} />
-          ))}
         </div>
       </Card>
 
@@ -1129,45 +1252,6 @@ function TicketCard({ ticket, onPrint }: { ticket: TicketType, onPrint: () => vo
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-type WatchlistMovie = {
-  id: number;
-  title: string;
-  poster: string;
-  rating: number;
-};
-
-function WatchlistItem({ movie }: { movie: WatchlistMovie }) {
-  return (
-    <div className="group relative">
-      <div className="aspect-[2/3] rounded-lg bg-gray-800 overflow-hidden">
-        <div className="w-full h-full bg-gradient-to-b from-gray-700 to-gray-800" />
-      </div>
-      
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-        <div className="flex gap-2">
-          <button className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
-            <Heart size={16} />
-          </button>
-          <button className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-      
-      <div className="absolute bottom-2 left-2 right-2">
-        <div className="flex items-center gap-1">
-          <Star size={12} className="text-yellow-400 fill-current" />
-          <span className="text-xs text-white font-medium">{movie.rating}</span>
-        </div>
-      </div>
-      
-      <button className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
-        <X size={12} />
-      </button>
     </div>
   );
 }

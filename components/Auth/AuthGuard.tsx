@@ -9,12 +9,26 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [auth, setAuth] = useState<null | boolean>(null);
   const router = useRouter();
 
+  const fetchUserProfile = async () => {
+      try {
+        const response = await api.get("/api/user/user-profile");
+        console.log("User profile fetched:", response);
+        useAuthStore.getState().setProfile(response);
+      } catch {
+        console.error("User profile fetch error");
+      }
+    };
+
   useEffect(() => {
     api
       .get("/api/auth/me")
       .then((response) => {
-        setAuth(true)
-        useAuthStore.getState().setIsAuthenticated(response.authenticated);
+        console.log("AuthGuard response:", response);
+        if (response.authenticated === true) {
+          setAuth(true)
+          fetchUserProfile();
+          useAuthStore.getState().setIsAuthenticated(response.authenticated);
+        }
       })
       .catch(() => {
         setAuth(false);
@@ -24,8 +38,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (auth === null)
     return (
-      <div className="flex items-center justify-center h-screen w-full">
-        <span>Chargement...</span>
+      <div className="">
+        <span></span>
       </div>
     );
 
