@@ -1,6 +1,8 @@
 "use client";
 
 // ─── IMPORTS ──────────────────────────────────────────────────────────────
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useEffect, useRef, useState } from "react";
 import {
   MessageCircle,
@@ -447,13 +449,17 @@ function DeckCarousel({ movies }: { movies: Movie[] }) {
 // ─── ASSISTANT MESSAGE (RESPONSE + CAROUSEL) ─────────────────────────────
 function AssistantMessage({ data }: { data: ApiResponse }) {
   const movies = data.movies?.slice(0, 6) || [];
-  if (!movies.length) return <p className="text-white">{data.assistant_message}</p>;
+
   return (
     <div className="space-y-5">
-      <div className="prose prose-invert max-w-none text-white prose-headings:text-white prose-p:text-gray-300 prose-p:leading-tight">
-        <div dangerouslySetInnerHTML={{ __html: data.assistant_message }} />
+      <div className="rounded-xl border border-neutral-700 bg-gradient-to-br from-[#1C1C1C] to-[#101010] p-4 shadow-lg">
+        <div className="prose prose-invert max-w-none text-white prose-p:text-gray-200 prose-strong:text-white prose-li:my-1 prose-ol:pl-5 prose-ol:list-decimal prose-ul:list-disc prose-p:leading-snug">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {data.assistant_message}
+          </ReactMarkdown>
+        </div>
       </div>
-      <DeckCarousel movies={movies} />
+      {!!movies.length && <DeckCarousel movies={movies} />}
     </div>
   );
 }
@@ -583,10 +589,16 @@ export default function ChatWidget() {
                       repeatType: "reverse",
                     }}
                   >
-                    <Popcorn className="w-5 h-5" />
+                    <Image
+                      width={40}
+                      height={40}
+                      src="/KaguyaCine_logo.svg"
+                      alt="KaguyaCiné Logo"
+                      className="h-10 w-10 bg-[#E50914] rounded-md"
+                    />
                   </motion.div>
                   <div>
-                    <h2 className="text-lg font-bold text-white tracking-tight">Movie Companion</h2>
+                    <h2 className="text-lg font-bold text-white tracking-tight">KaguyaCiné Chat bot</h2>
                     <p className="text-xs" style={{ color: LIGHT_GRAY }}>AI-powered recommendations</p>
                   </div>
                 </div>
@@ -682,7 +694,7 @@ function Bubble({ msg }: { msg: Msg }) {
           "w-fit max-w-[70%] rounded-xl px-4 py-3 text-sm shadow-lg",
           isUser
             ? "rounded-br-md"
-            : "rounded-bl-md border"
+            : "rounded-bl-md border pt-4 pb-12"
         )}
         style={
           isUser
